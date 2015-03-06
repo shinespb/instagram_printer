@@ -191,16 +191,27 @@ connection.getDevices(function(ports) {
   // clear existing options
   dropDown.innerHTML = "";
   // add new options
+  var optnum = 0;
+  var subBut = document.querySelector('#connect_button');
+
   ports.forEach(function (port) {
     var displayName = port["displayName"] + "("+port.path+")";
     if (!displayName) displayName = port.path;
-    
     var newOption = document.createElement("option");
     newOption.text = displayName;
     newOption.value = port.path;
     dropDown.appendChild(newOption);
+    optnum += 1
   });
+  if (optnum == 0){
+    var newOption = document.createElement("option");
+    newOption.text = "No serial devices";
+    newOption.value = "";
+    dropDown.appendChild(newOption);
+    subBut.disabled = true;
+  }
 });
+
 
 // Handle the 'Connect' button
 document.querySelector('#connect_button').addEventListener('click', function() {
@@ -229,4 +240,13 @@ document.querySelector('#flash').addEventListener('click', function() {
 // Get temperature
 document.querySelector('#get_temperature').addEventListener('click', function() {
   connection.send("console.log('TEMPERATURE='+E.getTemperature().toFixed(1));\n");
+});
+
+
+
+//options 
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('options').addEventListener('click', function() {
+        chrome.tabs.update({ url: 'chrome://extensions?options=fficplojlpjnibeckkiaaebjjehkamlh' });
+    });
 });
