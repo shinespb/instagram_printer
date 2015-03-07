@@ -30,19 +30,22 @@ var ba_sl = {
     143: "bootup, wait for reply"
 }
 var ba_reply = {
-    'recieved_bootup_message': "02",
-    'accept_payment': "02",
-    'decline_payment': "15",
-    'disable_device': "62"
+    'recieved_bootup_message': 02,
+    'accept_payment': 02,
+    'decline_payment': 15,
+    'disable_device': 62
 };
 
-
+var sendReply = function(reply){
+    connection.send(String.fromCharCode(reply));
+}
 var checkReply = function(code){
   if (code in ba_errorcodes){
     log('Error: ' + ba_errorcodes[code]);
   }
   if (code in ba_roubles){
     log('Got money: ' + ba_roubles[code] + ' roubles');
+    sendReply(ba_reply['accept_payment']);
   }
   if (code in ba_firstline){
     log('other: ' + ba_firstline[code]);
@@ -50,31 +53,35 @@ var checkReply = function(code){
   if (code in ba_sl){
     log('Bootup: ' + ba_sl[code]);    
     log('checking for reply: ' + ba_reply['recieved_bootup_message']);
-    //connection.send('');
+
+    sendReply(ba_reply['recieved_bootup_message']);
+    //sendReply(int2ab(ba_reply['recieved_bootup_message']));
   }
 }
-/* Interprets an ArrayBuffer as UTF-8 encoded string data. */
-var ab2str = function(buf) {
-  var bufView = new Uint8Array(buf);
-  log('bufview: ' + bufView);
-  var encodedString = String.fromCharCode.apply(null, bufView);
-  log('encodedString: ' + encodedString);
-  return decodeURIComponent(escape(encodedString));
-};
+
+var stringConChar = function(code) {
+  var arr = new Uint8Array(1);
+  //var res = ;
+  //log('stringConChar: ' + code);
+ //code));
+  for (i=0; i<1; i++){
+    arr[i] = String.fromCharCode(code);
+  }
+  return res;
+}
 
 var ab2int = function(buf) {
   var bufView = new Uint8Array(buf);
 
   var debugBytes = "";
+  log('arr length: '+ bufView.byteLength);
+
   for(var i=0; i<bufView.byteLength; i++) {
+    log('bufbyte: '+bufView[i]);
     debugBytes = bufView[i].toString();
   }
   log('bufdebug: ' + debugBytes);
-  checkReply(debugBytes);
-  
-  var encodedString = String.fromCharCode.apply(null, bufView);
-  log('encodedString: ' + encodedString);
-  return decodeURIComponent(escape(encodedString));
+  return debugBytes;
 };
 
 
@@ -88,6 +95,15 @@ var str2ab = function(str) {
   return bytes.buffer;
 };
 
+/* Interprets an ArrayBuffer as UTF-8 encoded string data. */
+var ab2str = function(buf) {
+  log('get from device: ' + buf);
+  var bufView = new Uint8Array(buf);
+  log('bufview: ' + bufView);
+  var encodedString = String.fromCharCode.apply(null, bufView);
+  log('encodedString: ' + encodedString);
+  return decodeURIComponent(escape(encodedString));
+};
 ////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////
 
@@ -117,7 +133,7 @@ SerialConnection.prototype.onReceive = function(receiveInfo) {
     return;
   }
 
-  this.lineBuffer += ab2int(receiveInfo.data);
+  this.lineBuffer += checkReply(ab2int(receiveInfo.data));
 
   var index;
   while ((index = this.lineBuffer.indexOf('\n')) >= 0) {
@@ -172,8 +188,6 @@ connection.onConnect.addListener(function() {
   // remove the connection drop-down
   document.querySelector('#connect_box').style.display = 'none';
   document.querySelector('#control_box').style.display = 'block';
-  // Simply send text to Espruino
-  //connection.send('"Hello "+"Espruino"\n');
 });
 
 connection.onReadLine.addListener(function(line) {
@@ -223,28 +237,16 @@ document.querySelector('#connect_button').addEventListener('click', function() {
   connection.connect(devicePath);
 });
 
-////////////////////////////////////////////////////////
-
-// Toggle LED state
-var is_on = false;
-document.querySelector('#toggle').addEventListener('click', function() {
-  is_on = !is_on;
-  connection.send("digitalWrite(LED1, "+(is_on ? '1' : '0')+");\n");
+document.querySelector('#disable_ba').addEventListener('click', function() {
+  log('trying to disable_device');
+  //sendReply(ba_reply['disable_device']);
 });
 
-// Flash 3 times
-document.querySelector('#flash').addEventListener('click', function() {
-  connection.send("l=0; var interval = setInterval(function() { digitalWrite(LED2, l&1); if (++l>6) clearInterval(interval); }, 200);\n");
+document.querySelector('#enable_ba').addEventListener('click', function() {
+  log('trying to enable_device');
+  //sendReply(ba_reply['recieved_bootup_message']);
 });
 
-// Get temperature
-document.querySelector('#get_temperature').addEventListener('click', function() {
-  connection.send("console.log('TEMPERATURE='+E.getTemperature().toFixed(1));\n");
-});
-
-
-
-//options 
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('options').addEventListener('click', function() {
         chrome.tabs.update({ url: 'chrome://extensions?options=fficplojlpjnibeckkiaaebjjehkamlh' });
