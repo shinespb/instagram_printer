@@ -36,8 +36,14 @@ var ba_reply = {
     'disable_device': 62
 };
 
+
 var sendReply = function(reply){
-    connection.send(String.fromCharCode(reply));
+  var arr = [];
+  var rp = String.fromCharCode(reply);
+  arr.push(rp);
+  log('chr: '+ rp + ', arr: '+ arr);
+  //connection.send(String.fromCharCode(reply));
+  connection.send(arr);
 }
 var checkReply = function(code){
   if (code in ba_errorcodes){
@@ -45,6 +51,11 @@ var checkReply = function(code){
   }
   if (code in ba_roubles){
     log('Got money: ' + ba_roubles[code] + ' roubles');
+    log('adding money');
+    //addFunds(ba_roubles[code]);
+    //log('try to get money');
+    //getFunds();
+    log('check for reply: ' + ba_reply['recieved_bootup_message']);
     sendReply(ba_reply['accept_payment']);
   }
   if (code in ba_firstline){
@@ -180,6 +191,18 @@ function log(msg) {
   buffer.innerHTML += msg + '<br/>';
 }
 
+function getFunds(){
+  log('getting money from storage: ' + window.localStorage["money"]);
+  return window.localStorage["money"];
+}
+
+function addFunds(amount){
+  if (amount > 0){
+    log('added '+ amount + 'money to storage');
+    window.localStorage["money"] = amount;
+  }
+}
+
 
 var connection = new SerialConnection();
 
@@ -225,7 +248,6 @@ connection.getDevices(function(ports) {
     subBut.disabled = true;
   }
 });
-
 
 // Handle the 'Connect' button
 document.querySelector('#connect_button').addEventListener('click', function() {

@@ -2,17 +2,12 @@
   "name": "Serial Test",
   "version": "2",
   "manifest_version": 2,
-  "permissions": ["tabs", "storage", "serial"],
+  "permissions": ["storage", "serial"],
   "minimum_chrome_version": "23",
-  "options_page": "options.html",
   "app": {
     "background": {
       "scripts": ["launch.js"],
       "transient": true
     }
-  },
-  "options_ui": {
-    "page": "options.html",
-    "chrome_style": true
   }
 }
