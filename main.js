@@ -62,7 +62,7 @@ function checkReply(code){
   else if (code in ba_roubles){
     log('Got: ' + ba_roubles[code] + ' roubles');
     log('adding money');
-    addFunds(ba_roubles[code]);
+    //addFunds(ba_roubles[code]);
     //log('try to get money');
     //getFunds();
     log('check for reply: ' + ba_reply['recieved_bootup_message']);
@@ -70,6 +70,8 @@ function checkReply(code){
 
     connection.send(ba_reply['recieved_bootup_message']);
     //sendReply(ba_reply['status']);
+    addFunds(ba_roubles[code]);
+    log('afterAdd: ' + getFunds());
   }
   else if (code in ba_firstline){
     log('other: ' + ba_firstline[code]);
@@ -193,6 +195,32 @@ SerialConnection.prototype.disconnect = function() {
 ////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////
 
+// var getMoney = function() {
+//     var money = "";
+//     chrome.storage.local.get('money', function(result){
+//       log('getm: ' + result['money']);
+//       money = result['money'];
+//     });
+//     return money;
+//   chrome.storage.local.get({'money'}, function(mn) {
+//     log('Get data: '+ mn);
+//   });
+// }
+
+
+// function setChanges(param) {
+//   // Get a value saved in a form.
+//   if (!param) {
+//     message('Error: No value specified');
+//     return;
+//   }
+//   // Save it using the Chrome extension storage API.
+//   chrome.storage.local.set({'money': param}, function() {
+//     // Notify that we saved.
+//     log('Settings saved: money: ' + param);
+//   });
+// }
+
 
 function log(msg) {
   var buffer = document.querySelector('#buffer');
@@ -200,17 +228,32 @@ function log(msg) {
 }
 
 function getFunds(){
-  log('getting money from storage: ' + window.localStorage["money"]);
-  return window.localStorage["money"];
+  chrome.storage.local.get('money', function(result){
+    log('getMoney: ' + result['money']);
+    return result['money'];
+  });
 }
 
 function addFunds(amount){
-  var moneybox = document.querySelector('#money');
-  if (amount > 0){
-    moneybox.value += amount;
-    log('added '+ amount + 'money to storage');
-    //window.localStorage["money"] = amount;
-  }
+  log('FUNDS: '+ getFunds())
+  money = money + amount;
+  log('TotalMoney: ' + money);
+  // var moneybox = document.querySelector('#money');
+
+  // chrome.storage.local.get('money', function(result){
+  //   log('getm: ' + result['money']);
+  //   money = result['money'];
+  // });
+  chrome.storage.local.set({'money': money}, function() {
+    // Notify that we saved.
+    log('Settings saved: money: ' + money);
+  });
+
+  //if (amount > 0){
+  //  moneybox.value += amount;
+  //  log('added '+ amount + 'money to storage');
+  //  //window.localStorage["money"] = amount;
+  //}
 }
 
 
@@ -231,7 +274,7 @@ connection.onReadLine.addListener(function(line) {
     document.querySelector('#get_temperature').innerHTML = "Temp = "+line.substr(12);
 });
 
-// Populate the list of available devices
+// Populate the list of available devices 
 connection.getDevices(function(ports) {
   // get drop-down port selector
   var dropDown = document.querySelector('#port_list');
