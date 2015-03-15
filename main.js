@@ -1,23 +1,32 @@
 const serial = chrome.serial;
 
+var money = 0;
+
 var ba_errorcodes = {
   32: "Motor Failure",
   33: "CheckSum Error",
-  34: "Bill Jam",
-  35: "Bill Remove",
-  36: "Stacker Open",
+  34: "Bill jam",
+  35: "Bill removed",
+  36: "Stacker opened",
   37: "Sensor Problem",
   38: "Unknown error",
-  39: "Bill Fish",
-  40: "Stacker Problem",
-  41: "Bill Reject"
+  39: "Bill Fishing",
+  40: "Stacker problem",
+  41: "Bill declined",
+  42: "Incorrect command",
+  47: "Stacker comes back",
+  62: "Bill accept enable status",
+  94: "Bill Accept inhibit status"
 };
 var ba_firstline = {
-  128: "bootup",
-  41: "bill reject",
+  128: "Booting",
+  129: "Bill Accepted",
+  41: "Bill declined",
   38: "communication error",
-  16: "bill accept finish",
-  17: "bill accept failure"
+  16: "Bill successfully accepted",
+  17: "Bill declined 1",
+  62: "Enable/Disable BA",
+  48: "BA RESET"
 };
 var ba_roubles = {
   64: 10,
@@ -27,85 +36,78 @@ var ba_roubles = {
   68: 1000
 };
 var ba_sl = {
-    143: "bootup, wait for reply"
+    143: "Booting, wait for reply"
 }
 var ba_reply = {
     'recieved_bootup_message': 02,
     'accept_payment': 02,
+    'status': 12,
     'decline_payment': 15,
     'disable_device': 62
 };
 
-
-var sendReply = function(reply){
-  var arr = [];
-  var rp = String.fromCharCode(reply);
-  arr.push(rp);
-  log('chr: '+ rp + ', arr: '+ arr);
-  //connection.send(String.fromCharCode(reply));
-  connection.send(arr);
+function str2ab(str) {
+  var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
+  var bufView = new Uint16Array(buf);
+  for (var i=0, strLen=str.length; i<strLen; i++) {
+    bufView[i] = str.charCodeAt(i);
+  }
+  return buf;
 }
-var checkReply = function(code){
+
+function checkReply(code){
   if (code in ba_errorcodes){
     log('Error: ' + ba_errorcodes[code]);
   }
-  if (code in ba_roubles){
-    log('Got money: ' + ba_roubles[code] + ' roubles');
+  else if (code in ba_roubles){
+    log('Got: ' + ba_roubles[code] + ' roubles');
     log('adding money');
-    //addFunds(ba_roubles[code]);
+    addFunds(ba_roubles[code]);
     //log('try to get money');
     //getFunds();
     log('check for reply: ' + ba_reply['recieved_bootup_message']);
-    sendReply(ba_reply['accept_payment']);
+    log('accept payment reply');
+
+    connection.send(ba_reply['recieved_bootup_message']);
+    //sendReply(ba_reply['status']);
   }
-  if (code in ba_firstline){
+  else if (code in ba_firstline){
     log('other: ' + ba_firstline[code]);
   }
-  if (code in ba_sl){
-    log('Bootup: ' + ba_sl[code]);    
+  else if (code in ba_sl){
+    log('Booting: ' + ba_sl[code]);    
     log('checking for reply: ' + ba_reply['recieved_bootup_message']);
-
-    sendReply(ba_reply['recieved_bootup_message']);
-    //sendReply(int2ab(ba_reply['recieved_bootup_message']));
+    log('boot reply');
+    connection.send(ba_reply['recieved_bootup_message']);
+    //sendReply(ba_reply['recieved_bootup_message']);
   }
-}
-
-var stringConChar = function(code) {
-  var arr = new Uint8Array(1);
-  //var res = ;
-  //log('stringConChar: ' + code);
- //code));
-  for (i=0; i<1; i++){
-    arr[i] = String.fromCharCode(code);
+  else {
+    log('Fucking something: ' + code);
   }
-  return res;
 }
 
 var ab2int = function(buf) {
   var bufView = new Uint8Array(buf);
 
   var debugBytes = "";
-  log('arr length: '+ bufView.byteLength);
+  //log('arr length: '+ bufView.byteLength);
 
   for(var i=0; i<bufView.byteLength; i++) {
     log('bufbyte: '+bufView[i]);
     debugBytes = bufView[i].toString();
   }
-  log('bufdebug: ' + debugBytes);
+  //log('bufdebug: ' + debugBytes);
   return debugBytes;
 };
 
-
-/* Converts a string to UTF-8 encoding in a Uint8Array; returns the array buffer. */
-var str2ab = function(str) {
-  var encodedString = unescape(encodeURIComponent(str));
+function sendReply(reply){
+  var encodedString = unescape(encodeURIComponent(String.fromCharCode(reply)));
   var bytes = new Uint8Array(encodedString.length);
   for (var i = 0; i < encodedString.length; ++i) {
     bytes[i] = encodedString.charCodeAt(i);
   }
   return bytes.buffer;
-};
-
+}
 /* Interprets an ArrayBuffer as UTF-8 encoded string data. */
 var ab2str = function(buf) {
   log('get from device: ' + buf);
@@ -141,17 +143,21 @@ SerialConnection.prototype.onConnectComplete = function(connectionInfo) {
 
 SerialConnection.prototype.onReceive = function(receiveInfo) {
   if (receiveInfo.connectionId !== this.connectionId) {
+    log('Connection error. onReceive');
     return;
   }
 
-  this.lineBuffer += checkReply(ab2int(receiveInfo.data));
+  //this.lineBuffer += checkReply(ab2int(receiveInfo.data));
+  //log('getting info');
+  checkReply(ab2int(receiveInfo.data));
 
-  var index;
-  while ((index = this.lineBuffer.indexOf('\n')) >= 0) {
-    var line = this.lineBuffer.substr(0, index + 1);
-    this.onReadLine.dispatch(line);
-    this.lineBuffer = this.lineBuffer.substr(index + 1);
-  }
+
+  // var index;
+  // while ((index = this.lineBuffer.indexOf('\n')) >= 0) {
+  //   var line = this.lineBuffer.substr(0, index + 1);
+  //   this.onReadLine.dispatch(line);
+  //   this.lineBuffer = this.lineBuffer.substr(index + 1);
+  // }
 };
 
 SerialConnection.prototype.onReceiveError = function(errorInfo) {
@@ -165,14 +171,16 @@ SerialConnection.prototype.getDevices = function(callback) {
 };
 
 SerialConnection.prototype.connect = function(path) {
-  serial.connect(path, this.onConnectComplete.bind(this))
+  //serial.connect(path, this.onConnectComplete.bind(this))
+  serial.connect(path, { bitrate: 9600, dataBits: "eight", parityBit: "even", stopBits: "one" }, this.onConnectComplete.bind(this))
 };
 
 SerialConnection.prototype.send = function(msg) {
   if (this.connectionId < 0) {
     throw 'Invalid connection';
   }
-  serial.send(this.connectionId, str2ab(msg), function() {});
+  //serial.send(this.connectionId, str2ab(msg), function() {});
+  serial.send(this.connectionId, sendReply(msg), function() {});
 };
 
 SerialConnection.prototype.disconnect = function() {
@@ -197,9 +205,11 @@ function getFunds(){
 }
 
 function addFunds(amount){
+  var moneybox = document.querySelector('#money');
   if (amount > 0){
+    moneybox.value += amount;
     log('added '+ amount + 'money to storage');
-    window.localStorage["money"] = amount;
+    //window.localStorage["money"] = amount;
   }
 }
 
