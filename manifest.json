@@ -1,13 +1,19 @@
 {
-  "name": "Serial Test",
-  "version": "2",
   "manifest_version": 2,
-  "permissions": ["storage", "serial"],
-  "minimum_chrome_version": "23",
+  "name": "InstaBoo",
+  "version": "1",
+  "permissions": [
+    "storage",
+    "serial",
+    "identity",
+    "*://*/*"
+    // "https://api.instagram.com/*",
+    // "http://scontent.cdninstagram.com/*"
+],
   "app": {
-    "background": {
-      "scripts": ["launch.js"],
-      "transient": true
-    }
-  }
+   "background": {
+     "scripts": ["background.js"]
+   }
+  },
+  "minimum_chrome_version": "28"
 }

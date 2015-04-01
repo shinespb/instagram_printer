@@ -1,21 +1,85 @@
-<!-- Box for choosing the port to connect to -->
-<div id="connect_box" style="position: absolute; left : 0; top: 0">
-  <select id="port_list"><option>Please Wait...</option></select>
-  <button id="connect_button">Connect</button>
-  <a href="#" id='options'>Options</a>
-</div>
-<div id="money_box" style="position: absolute; right: 0; top: 0">
-  <a id="money">0</a>
-</div>
-<br/>
-<!-- Buttons -->
-<div id="control_box" style="position: absolute; left : 0; bottom: 0; display : none;">
-  <button id="disable_ba">Disable BA</button>
-  <button id="enable_ba">Enable BA</button>
-  <button id="get_temperature">Get Temperature</button>
-</div>
-<!-- Box for log messages -->
-<div id="buffer" style="position: absolute; left : 0; top: 10;width:100%;height:100%;overflow:auto;">
-</div>
-<!-- Include main code -->
-<script src="main.js"></script>
+<!DOCTYPE html>
+<html ng-app="InstaBoo">
+<head>
+  <title>InstaBoo</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="angular.min.js"></script>
+  <script src="serial.js"></script>
+  <script src="script.js"></script>
+</head>
+<body ng-controller="MainCtrl">
+  <div class="bar">
+    <div ng-if="user || photo" style="display: inline-block; float: left;">
+      <button ng-click="clear()">
+        <svg style="width:36px;height:36px;" viewBox="0 0 24 24"><path fill="#6f6f6f" d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"></path></svg>
+      </button>
+      <input type="text" ng-value="'@' + (user || photo.user.username)" disabled="disabled"/>
+    </div>
+    <form name="boo" ng-submit="search(content)" ng-if="!user && !photo" style="display: inline-block; text-align: left; float: left;">
+      <input class="focus-this" type="text" name="content" ng-model="$parent.content" ng-model-options="{debounce: 1000}">
+      <button type="submit" style="margin-left: -53px;"><svg style="width:36px;height:36px;" viewBox="0 0 24 24">
+                        <path fill="#6f6f6f" d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"></path>
+                    </svg></button>
+    </form>
+    <span class="money">{{money}} rub.</span>
+    <div ng-if="photo">
+      <button type="button" ng-click="printImage(); clear()" ng-disabled="money < 100">
+        <svg version="1.1" width="36" height="36" viewBox="0 0 24 24"><path d="M18,3H6V7H18M19,12A1,1 0 0,1 18,11A1,1 0 0,1 19,10A1,1 0 0,1 20,11A1,1 0 0,1 19,12M16,19H8V14H16M19,8H5A3,3 0 0,0 2,11V17H6V21H18V17H22V11A3,3 0 0,0 19,8Z" /></svg>
+      </button>
+    </div>
+    <div ng-if="!photo">
+      <a class="list-icon" ng-class="{active: (layout === 'list')}" ng-click="setLayout('list')"></a>
+      <a class="grid-icon" ng-class="{active: (layout === 'grid')}" ng-click="setLayout('grid')"></a>
+    </div>
+  </div>
+  <div ng-if="photo" class="photo">
+    <img remote-src="{{photo.images.standard_resolution.url}}" set-bounds/>
+  </div>
+  <div style="margin-top: 65px;">
+    <div class="users" ng-if="!user && users">
+      <h2>Users</h2>
+      <div class="xhr-status" ng-show="users.$pending">..loading</div>
+      <div class="xhr-status" ng-show="users.$error">Error.</div>
+      <div class="xhr-status" ng-show="users.$success && !users.length">No items.</div>
+      <button ng-repeat="user in users track by user.id" ng-click="showUser(user)">@{{user.username | filter:selectFound:content}}</button>
+    </div>
+    <div class="userPics" ng-if="user && userPics">
+      <div class="xhr-status" ng-show="userPics.$pending">..loading</div>
+      <div class="xhr-status" ng-show="userPics.$error" style="margin-top: 20px;">Error.</div>
+      <div class="xhr-status" ng-show="userPics.$success && !userPics.length">No items.</div>
+      <ul ng-if="layout === 'grid'" class="grid">
+        <!-- A view with big photos and no text -->
+        <li ng-repeat="p in userPics track by p.id">
+          <img remote-src="{{p.images.low_resolution.url}}" ng-click="showImage(p)" />
+        </li>
+      </ul>
+      <ul ng-if="layout === 'list'" class="list">
+        <!-- A compact view smaller photos and titles -->
+        <li ng-repeat="p in userPics">
+          <img remote-src="{{p.images.thumbnail.url}}" ng-click="showImage(p)" />
+          <p>{{p.caption.text}}</p>
+        </li>
+      </ul>
+    </div>
+    <div class="tagPics" ng-if="!user && tagPics">
+      <h2>#{{tag}}</h2>
+      <div class="xhr-status" ng-show="tagPics.$pending">..loading</div>
+      <div class="xhr-status" ng-show="tagPics.$success && !tagPics.length">No items.</div>
+      <div class="xhr-status" ng-show="tagPics.$error">Error.</div>
+      <ul ng-if="layout === 'grid'" class="grid">
+        <!-- A view with big photos and no text -->
+        <li ng-repeat="p in tagPics track by p.id">
+          <img remote-src="{{p.images.low_resolution.url}}" ng-click="showImage(p)" />
+        </li>
+      </ul>
+      <ul ng-if="layout === 'list'" class="list">
+        <!-- A compact view smaller photos and titles -->
+        <li ng-repeat="p in tagPics">
+          <img remote-src="{{p.images.thumbnail.url}}" ng-click="showImage(p)" />
+          <p>{{p.caption.text}}</p>
+        </li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>
