@@ -87,7 +87,7 @@ app.factory('instagram', ['$http', function($http){
 }]);
 
 app.controller('MainCtrl', function ($scope, instagram, $http, $filter, Serial){
-  $scope.money = 0;
+  $scope.money = 1000;
   $scope.layout = 'grid';
   $scope.setLayout = function (l) {
     $scope.layout = l;
@@ -116,33 +116,58 @@ app.controller('MainCtrl', function ($scope, instagram, $http, $filter, Serial){
     $scope.tag = content;
   }
   $scope.$on('money:get', function (e, value) {
-    console.log('money:get', value);
     $scope.$apply(function(){
       $scope.money += value;
     });
   });
-  $scope.printImage = function () {
-    $scope.money -= 100;
+  $scope.printImage = function (photo) {
+    $scope.printing = true;
+    // window.print()
+    popupPrint(photo.images.standard_resolution.url, function () {
+      $scope.$apply(function(){
+        $scope.printing = false;
+        $scope.money -= 100;
+        $scope.clear();
+      });
+    });
   }
 });
 
+function loadImage (uri, el, callback) {
+  var xhr = new XMLHttpRequest();
+  xhr.responseType = 'blob';
+  xhr.onload = function () {
+    var ourl = window.URL.createObjectURL(xhr.response)
+    el.src = ourl;
+    callback && callback(el, ourl);
+  };
+  xhr.open('GET', uri, true);
+  xhr.send();
+}
+
+function popupPrint (uri, callback) {
+  var popup = chrome.app.window.get('print');
+  var $popDoc = popup.contentWindow.document;
+  var $img = $popDoc.createElement('img');
+  $popDoc.body.innerHTML = '';
+  loadImage(uri, $img, function () {
+    $popDoc.body.appendChild($img);
+    setTimeout(function(){
+      popup.contentWindow.print();
+      callback && callback();
+    }, 200)
+  });
+}
+
 app.directive('remoteSrc', function(){
-  function loadImage (uri, el) {
-    var xhr = new XMLHttpRequest();
-    xhr.responseType = 'blob';
-    xhr.onload = function () {
-      el.src = window.URL.createObjectURL(xhr.response);
-      setTimeout(function(){
-        el.classList.add('loaded');
-      }, 100)
-    };
-    xhr.open('GET', uri, true);
-    xhr.send();
-  }
   return {
     restrict: 'A',
     link: function(scope, el, attrs) {
-      loadImage(attrs.remoteSrc, el[0]);
+      loadImage(attrs.remoteSrc, el[0], function () {
+        setTimeout(function(){
+          el.addClass('loaded');
+        }, 100);
+      });
     }
   }
 });

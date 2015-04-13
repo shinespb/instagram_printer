@@ -1,19 +1,18 @@
 {
   "manifest_version": 2,
   "name": "InstaBoo",
-  "version": "1",
+  "version": "0.1",
   "permissions": [
     "storage",
     "serial",
     "identity",
+    // "fullscreen",
     "*://*/*"
-    // "https://api.instagram.com/*",
-    // "http://scontent.cdninstagram.com/*"
-],
+  ],
+  // "kiosk_enabled": true,
   "app": {
-   "background": {
-     "scripts": ["background.js"]
-   }
-  },
-  "minimum_chrome_version": "28"
+    "background": {
+      "scripts": ["background.js"]
+    }
+  }
 }

@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html ng-app="InstaBoo">
+<html ng-app="InstaBoo" ng-csp>
 <head>
   <title>InstaBoo</title>
   <link rel="stylesheet" href="style.css">
-  <script src="angular.min.js"></script>
-  <script src="serial.js"></script>
-  <script src="script.js"></script>
+  <script src="js/angular.min.js"></script>
+  <script src="js/ngCsp.js"></script>
+  <script src="js/serial.js"></script>
+  <script src="js/script.js"></script>
 </head>
 <body ng-controller="MainCtrl">
   <div class="bar">
@@ -23,7 +24,7 @@
     </form>
     <span class="money">{{money}} rub.</span>
     <div ng-if="photo">
-      <button type="button" ng-click="printImage(); clear()" ng-disabled="money < 100">
+      <button type="button" ng-click="printImage(photo);" ng-disabled="money < 100">
         <svg version="1.1" width="36" height="36" viewBox="0 0 24 24"><path d="M18,3H6V7H18M19,12A1,1 0 0,1 18,11A1,1 0 0,1 19,10A1,1 0 0,1 20,11A1,1 0 0,1 19,12M16,19H8V14H16M19,8H5A3,3 0 0,0 2,11V17H6V21H18V17H22V11A3,3 0 0,0 19,8Z" /></svg>
       </button>
     </div>
@@ -35,7 +36,7 @@
   <div ng-if="photo" class="photo">
     <img remote-src="{{photo.images.standard_resolution.url}}" set-bounds/>
   </div>
-  <div style="margin-top: 65px;">
+  <div style="margin-top: 65px;" class="article">
     <div class="users" ng-if="!user && users">
       <h2>Users</h2>
       <div class="xhr-status" ng-show="users.$pending">..loading</div>

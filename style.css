@@ -95,7 +95,7 @@ h2 {
   text-align:right;
   line-height: 1;
   height: 64px;
-  z-index: 1000;
+  z-index: 200;
 }
 
 .photo {
@@ -111,7 +111,7 @@ h2 {
 .photo img {
   width: 640px;
   height: 640px;
-  background: url('image-loading.svg');
+  background: url('img/image-loading.svg');
   background-position: center center;
   background-size: 50px;
   background-repeat: no-repeat no-repeat;
@@ -258,4 +258,15 @@ ul.grid li img{
 
 ul.grid li img.loaded {
   opacity: 1;
+}
+
+@media print {
+  .article, .bar {
+    display: none;
+  }
+  .photo {
+    top: 0px;
+    position: absolute;
+    background: white;
+  }
 }
