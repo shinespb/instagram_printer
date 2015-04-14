@@ -193,8 +193,39 @@ app.directive('setBounds', function () {
 });
 
 app.service('Serial', function($rootScope) {
-  window.rs = $rootScope;
-  connection.connect('/dev/tty.usbserial');
+  var DEVICE = false;
+  var DEVICE_PATH = '';
+
+  chrome.storage.onChanged.addListener(function(changes, namespace){
+    if(changes.devicePath)
+      DEVICE_PATH = changes.devicePath.newValue;
+  });
+
+  chrome.storage.local.get({
+    devicePath: DEVICE_PATH
+  }, function(items){
+    DEVICE_PATH = items.devicePath;
+  });
+
+  function connect () {
+    log('searching for device.. "' + DEVICE_PATH + '"');
+    connection.getDevices(function(items){
+      if(!items.some(function(item){
+          return item.path === DEVICE_PATH;
+          }))
+        return (DEVICE = false || log('searching for device.. NOT FOUND'));
+      DEVICE = connection.connect();
+    });
+  }
+
+  (function polling () {
+    if(!DEVICE_PATH) {}
+    else if(!(DEVICE && log('ping..') && connection.send(ba_reply['status'])) && log('..pong')) {
+      log('..no answer');
+      connect();
+    }
+    setTimeout(polling, 5000);
+  }());
 
   window.checkReply = function checkReply(code){
     if (code in ba_errorcodes){

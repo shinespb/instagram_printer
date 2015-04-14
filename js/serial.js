@@ -143,15 +143,26 @@ SerialConnection.prototype.getDevices = function(callback) {
 
 SerialConnection.prototype.connect = function(path) {
   //serial.connect(path, this.onConnectComplete.bind(this))
-  serial.connect(path, { bitrate: 9600, dataBits: "eight", parityBit: "even", stopBits: "one" }, this.onConnectComplete.bind(this))
+  try {
+    serial.connect(path, { bitrate: 9600, dataBits: "eight", parityBit: "even", stopBits: "one" }, this.onConnectComplete.bind(this))
+  } catch (e) {
+    return false;
+  }
+  return true;
 };
 
 SerialConnection.prototype.send = function(msg) {
-  if (this.connectionId < 0) {
-    throw 'Invalid connection';
-  }
+  // if (this.connectionId < 0) {
+  //   log('..no device selected');
+  //   return false;
+  // }
   //serial.send(this.connectionId, str2ab(msg), function() {});
-  serial.send(this.connectionId, sendReply(msg), function() {});
+  try {
+    serial.send(this.connectionId, sendReply(msg), function() {});
+  } catch (e) {
+    return false
+  }
+  return true;
 };
 
 SerialConnection.prototype.disconnect = function() {
@@ -193,6 +204,7 @@ SerialConnection.prototype.disconnect = function() {
 
 function log(msg) {
   console.log(msg);
+  return true;
 }
 
 function getFunds(){

@@ -247,7 +247,7 @@ ul.grid li img{
   height:306px;
   display:block;
   border:none;
-  background: url('image-loading.svg');
+  background: url('img/image-loading.svg');
   background-position: center center;
   background-repeat: no-repeat no-repeat;
   background-size: 50px;

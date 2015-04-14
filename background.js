@@ -5,11 +5,16 @@ chrome.app.runtime.onLaunched.addListener(function() {
   }, function (w) {
     // w.minimize();
   });
+  chrome.app.window.create('options.html', {
+    id: 'options',
+    bounds: { width: 400, height: 37 },
+  });
   chrome.app.window.create('index.html', {
     id: 'main',
-    bounds: { width: 620, height: 500 },
+    bounds: { width: 1024, height: 640 },
   }, function (w){
-    w.focus();
     // w.fullscreen();
+    w.focus();
   });
+
 });
