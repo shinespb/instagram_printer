@@ -12,7 +12,7 @@
   // "kiosk_enabled": true,
   "app": {
     "background": {
-      "scripts": ["background.js"]
+      "scripts": ["local-storage.js", "background.js", "kb/background.js"]
     }
   }
 }
